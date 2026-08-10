@@ -1,0 +1,30 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 환경변수 — SUPABASE_SERVICE_ROLE_KEY 는 RLS 를 우회하므로 절대 커밋 금지.
+# (*.local 로도 걸리지만, 공개 저장소라 명시해 둔다)
+.env
+.env.*
+!.env.example
