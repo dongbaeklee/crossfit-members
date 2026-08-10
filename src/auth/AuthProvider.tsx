@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { PREVIEW, db, supabase } from '../lib/supabase'
 import type { StaffProfile } from '../types'
 
 interface AuthValue {
@@ -22,10 +22,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // 미리보기 모드에는 로그인이 없다. 전 지점이 보이는 대표 권한으로 바로 들어간다.
+    if (PREVIEW) {
+      setProfile({ id: 'preview', role: 'owner', box: null, display_name: '미리보기' })
+      setLoading(false)
+      return
+    }
+
     let alive = true
 
     async function loadProfile(userId: string) {
-      const { data, error } = await supabase
+      const { data, error } = await db()
         .from('profiles')
         .select('id, role, box, display_name')
         .eq('id', userId)
@@ -38,6 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfile((data as StaffProfile | null) ?? null)
     }
+
+    if (!supabase) return
 
     supabase.auth.getSession().then(async ({ data }) => {
       if (!alive) return
@@ -63,9 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     loading,
+    // 미리보기에는 세션이 없으므로 프로필만으로 판단한다.
     isStaff: !!profile && STAFF_ROLES.includes(profile.role),
     signOut: async () => {
-      await supabase.auth.signOut()
+      await supabase?.auth.signOut()
     },
   }
 

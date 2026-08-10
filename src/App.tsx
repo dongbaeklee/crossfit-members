@@ -1,3 +1,4 @@
+import { PREVIEW } from './lib/supabase'
 import { useAuth } from './auth/AuthProvider'
 import Login from './pages/Login'
 import Cards from './pages/Cards'
@@ -10,7 +11,8 @@ export default function App() {
     return <div className="grid min-h-screen place-items-center text-[13.5px] text-ink-3">불러오는 중…</div>
   }
 
-  if (!session) return <Login />
+  // 미리보기 모드에는 세션이 없다. 로그인 화면을 건너뛰고 바로 카드로 들어간다.
+  if (!PREVIEW && !session) return <Login />
 
   // 로그인은 됐지만 코치 권한이 아직 없는 계정 — 회원 계정으로 들어온 경우가 대부분이다.
   if (!isStaff) {

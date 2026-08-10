@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "seed": "node scripts/seed-snapshots.mjs",
     "seed:dry": "node scripts/seed-snapshots.mjs --dry-run",
-    "check:rules": "vite-node scripts/check-card-rules.ts"
+    "check:rules": "vite-node scripts/check-card-rules.ts",
+    "deploy": "./scripts/deploy.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",

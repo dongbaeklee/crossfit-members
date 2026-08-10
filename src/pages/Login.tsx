@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '../lib/supabase'
+import { db } from '../lib/supabase'
 import { Alert, Input } from '../components/ui'
 
 /** Supabase 의 영문 오류를 코치가 알아볼 수 있는 문장으로 바꾼다 */
@@ -23,7 +23,7 @@ export default function Login() {
     setError('')
     setBusy(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await db().auth.signInWithPassword({ email, password })
       if (error) throw error
       // 성공하면 onAuthStateChange 가 화면을 넘긴다
     } catch (err) {

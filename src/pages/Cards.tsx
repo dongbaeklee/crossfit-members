@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { PREVIEW } from '../lib/supabase'
+import { loadCards, saveProfile } from '../lib/store'
 import { useAuth } from '../auth/AuthProvider'
 import type { MemberCard, ProfilePatch } from '../types'
 import { applyFilters, isRated, type FilterMode } from '../lib/cards'
@@ -25,11 +26,14 @@ export default function Cards() {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const { data, error } = await supabase.from('member_cards').select('*')
-      if (!alive) return
-      if (error) setLoadError(error.message)
-      else setRows(((data as MemberCard[]) ?? []).sort((a, b) => a.name.localeCompare(b.name, 'ko')))
-      setLoading(false)
+      try {
+        const data = await loadCards()
+        if (alive) setRows(data)
+      } catch (e) {
+        if (alive) setLoadError(e instanceof Error ? e.message : String(e))
+      } finally {
+        if (alive) setLoading(false)
+      }
     })()
     return () => {
       alive = false
@@ -49,18 +53,18 @@ export default function Cards() {
     setSavingKey(k)
     setRows((prev) => prev.map((r) => (keyOf(r) === k ? { ...r, ...p } : r)))
 
-    const { error } = await supabase
-      .from('member_profiles')
-      .upsert({ box: card.box, name: card.name, ...p }, { onConflict: 'box,name' })
-
-    setSavingKey(null)
-    if (error) {
+    try {
+      await saveProfile(card, p)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
       setRows(before)
       setSaveError(
-        error.message.includes('row-level security')
+        msg.includes('row-level security')
           ? '저장 권한이 없습니다. 담당 지점이 맞는지 관장님께 확인해 주세요.'
-          : `저장 실패: ${error.message}`,
+          : `저장 실패: ${msg}`,
       )
+    } finally {
+      setSavingKey(null)
     }
   }
 
@@ -74,20 +78,32 @@ export default function Cards() {
           {profile?.display_name || profile?.role}
           {profile?.box ? ` · ${profile.box}` : ' · 전체'}
         </span>
-        <button
-          type="button"
-          onClick={signOut}
-          className="ml-auto rounded-[9px] border border-line bg-panel px-[13px] py-2 text-[12.5px] font-semibold text-ink-2 transition hover:border-line2 hover:text-ink"
-        >
-          로그아웃
-        </button>
+        {!PREVIEW && (
+          <button
+            type="button"
+            onClick={signOut}
+            className="ml-auto rounded-[9px] border border-line bg-panel px-[13px] py-2 text-[12.5px] font-semibold text-ink-2 transition hover:border-line2 hover:text-ink"
+          >
+            로그아웃
+          </button>
+        )}
       </header>
+
+      {PREVIEW && (
+        <div className="mb-4 rounded-[14px] border border-warn/30 bg-warn-tint px-4 py-[14px] text-[12.5px] leading-[1.65] text-ink-2">
+          <b className="text-warn">미리보기 — 화면에 보이는 회원은 전부 가짜입니다.</b>
+          <br />
+          모양과 조작감을 확인하기 위한 화면입니다. 고쳐도 새로고침하면 되돌아가고, 아무 데도 저장되지 않습니다.
+          Supabase 프로젝트를 복구하고 접속 정보를 넣으면 실제 회원 197명이 뜨고 로그인이 켜집니다.
+        </div>
+      )}
 
       <Info>
         회원별 <b>운동 역량</b>(역도·체조·유산소)과 <b>특성</b>(목표·성향·리스크)을 한 장으로 봅니다. 카드를 누르면
         바로 편집됩니다.{' '}
         <span className="text-ink-3">
-          평가 완료 <b>{ratedCount}</b>명 / 전체 {rows.length}명 · 입력값은 바로 저장되어 다른 코치에게도 보입니다.
+          평가 완료 <b>{ratedCount}</b>명 / 전체 {rows.length}명
+          {PREVIEW ? ' · 미리보기라 저장되지 않습니다.' : ' · 입력값은 바로 저장되어 다른 코치에게도 보입니다.'}
         </span>
       </Info>
 
