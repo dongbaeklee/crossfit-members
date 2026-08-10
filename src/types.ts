@@ -37,9 +37,11 @@ export interface ProfilePatch {
   note?: string
 }
 
+/** public.staff — 로그인 계정의 권한. 가입 직후에는 pending(권한 없음)이다. */
 export interface StaffProfile {
   id: string
-  role: 'member' | 'coach' | 'manager' | 'owner'
+  role: 'pending' | 'coach' | 'manager' | 'owner'
+  /** null 이면 전 지점(대표) */
   box: string | null
   display_name: string
 }

@@ -14,6 +14,7 @@ interface AuthValue {
 
 const AuthContext = createContext<AuthValue | null>(null)
 
+/** pending 은 가입만 된 상태 — 아무것도 못 본다 */
 const STAFF_ROLES = ['coach', 'manager', 'owner']
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -33,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function loadProfile(userId: string) {
       const { data, error } = await db()
-        .from('profiles')
+        .from('staff')
         .select('id, role, box, display_name')
         .eq('id', userId)
         .maybeSingle()

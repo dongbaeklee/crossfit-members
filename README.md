@@ -4,9 +4,6 @@
 
 발리인미사 · 메이커스 회원의 **운동 역량**과 **특성**을 카드 한 장으로 보고 기록하는 코치용 화면.
 
-> 지금 올라가 있는 것은 **미리보기(가짜 데이터)** 다. 이 저장소는 공개라 실제 회원 정보를 번들에 넣지 않는다.
-> Supabase 접속 정보(`.env.local`)를 넣고 다시 배포하면 로그인이 켜지고 실제 회원이 뜬다.
-
 허브(참모 대시보드, `bm-ops-hub`)와는 별개 사이트다. 허브는 운영 숫자를, 여기는 회원 개인을 다룬다.
 
 ## 무엇을 담나
@@ -25,12 +22,38 @@
 
 ## 구조
 
-- **DB**: 기존 `crossfit-billing` Supabase 프로젝트를 공유한다. 인증·역할(`profiles`, `my_role()`, `has_role()`)은 `crossfit-booking` 이 만든 것을 그대로 쓴다.
-- **새 테이블 2개** (결제앱의 `members` 는 건드리지 않는다)
-  - `member_snapshots` — 엑셀에서 온 사실값. 시드가 매주 덮어쓴다.
-  - `member_profiles` — 코치가 입력한 판단값. **시드가 절대 건드리지 않는다.**
-  - `member_cards` 뷰 — 위 둘을 합쳐 화면에 넘긴다 (`security_invoker` 라 RLS 그대로 적용).
-- **권한**: 코치 이상만, 자기 지점만. 대표(owner)는 전체.
+전용 Supabase 프로젝트 **`profile card`** (`hwnvgmdkttaiasqohndz`, 서울) 하나를 쓴다. 결제앱·예약앱과 DB를 공유하지 않는다.
+
+| 테이블 | 내용 | 시드가 덮어쓰나 |
+| --- | --- | --- |
+| `staff` | 로그인 계정의 권한(`pending`/`coach`/`manager`/`owner`)과 담당 지점 | — |
+| `boxes` | 지점 목록 | — |
+| `member_snapshots` | 엑셀에서 온 사실값 | **덮어씀** |
+| `member_profiles` | 코치가 입력한 역량·특성 | **절대 안 건드림** |
+| `member_cards` (뷰) | 위 둘을 합쳐 화면에 넘김 (`security_invoker`) | — |
+
+스냅샷과 프로필을 가른 이유: 매주 엑셀을 다시 밀어넣어도 코치가 쌓아온 기록이 살아남아야 하기 때문이다.
+
+**권한**: 코치 이상만, 자기 지점만. `box`가 비어 있는 `owner`는 전 지점. 로그인하지 않았거나 `pending` 이면 아무것도 안 보인다(RLS).
+
+## 계정 만들기
+
+Supabase 는 기본적으로 공개 가입이 열려 있다. 그래서 **가입만으로는 아무 권한도 주지 않는다**(`pending`). 관장님이 직접 올려줘야 한다.
+
+1. [Supabase 대시보드 → Authentication → Users → Add user](https://supabase.com/dashboard/project/hwnvgmdkttaiasqohndz/auth/users) 에서 이메일·비밀번호로 계정 생성 (Auto Confirm User 켜기)
+2. SQL Editor 에서 권한 부여
+
+```sql
+-- 관장(전 지점)
+update public.staff set role = 'owner', display_name = '이도형'
+where email = '관장이메일@example.com';
+
+-- 코치(담당 지점만)
+update public.staff set role = 'coach', box = '메이커스', display_name = '조강희'
+where email = '코치이메일@example.com';
+```
+
+권한을 회수하려면 `role = 'pending'` 으로 되돌린다.
 
 ## 준비
 
@@ -41,14 +64,14 @@ npm install
 
 `SUPABASE_SERVICE_ROLE_KEY` 는 RLS 를 우회한다. 시드 스크립트 전용이며 **절대 `VITE_` 접두사를 붙이지 말 것** — 붙이는 순간 프런트 번들에 박혀 공개된다.
 
-## 마이그레이션 적용
+접속 정보가 없으면 사이트는 **미리보기 모드**(가짜 데이터)로 뜬다. 이 저장소는 공개라 실제 회원 정보는 번들에 넣지 않는다.
+
+## 마이그레이션
 
 ```bash
-supabase link --project-ref jofzfytactglagfzyeip
+supabase link --project-ref hwnvgmdkttaiasqohndz
 supabase db push
 ```
-
-`crossfit-booking` 의 마이그레이션(booking_core → tighten_billing_rls → rename_current_role)이 먼저 적용돼 있어야 한다. 안 돼 있으면 마이그레이션이 스스로 멈추고 알려준다.
 
 ## 회원 명단 동기화
 
@@ -62,9 +85,9 @@ npm run seed       # 실제 반영 (upsert — 여러 번 돌려도 안전)
 ## 개발 · 검증 · 배포
 
 ```bash
-npm run dev           # 로컬 개발
+npm run dev           # 로컬 개발 (http://localhost:5173/crossfit-members/)
 npm run check:rules   # 강점/약점·근속·필터 규칙 검증 (25건, DB 불필요)
-npm run build         # dist/ 생성 (GitHub Pages 용 base 경로 적용)
+npm run deploy        # 빌드 후 gh-pages 브랜치로 배포 (주소 유지)
 ```
 
-저장소 이름을 바꾸면 `VITE_BASE=/새이름/ npm run build` 로 덮어쓴다.
+저장소 이름을 바꾸면 `VITE_BASE=/새이름/` 을 붙여 빌드한다.
