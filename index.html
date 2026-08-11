@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#3182F6" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="회원 카드" />
+    <!--
+      apple-mobile-web-app-capable 은 일부러 넣지 않는다.
+      iOS 는 standalone 으로 뜨면 Safari 와 저장소가 분리돼, 매직링크(메일→Safari)로 만든
+      세션이 홈화면 앱에는 없어서 매번 다시 로그인하게 된다. 빼두면 홈화면 아이콘이
+      Safari 로 열려 로그인 상태가 그대로 유지된다.
+    -->
     <title>회원 카드 · 발리인미사 · 메이커스</title>
   </head>
   <body>

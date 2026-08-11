@@ -59,6 +59,8 @@ export default function Login() {
           </p>
           <p className="mt-4 text-[11.5px] leading-relaxed text-ink-3">
             링크는 1시간 동안 유효합니다. 메일이 안 보이면 스팸함도 확인해 주세요.
+            <br />
+            <b>메일은 링크를 요청한 기기에서 여는 게 좋습니다.</b> 그래야 그 기기에 로그인 상태가 남습니다.
           </p>
           <button
             type="button"
@@ -80,9 +82,9 @@ export default function Login() {
       <form onSubmit={submit} className="w-full max-w-[380px] rounded-xl2 bg-panel p-8 shadow-card">
         <h1 className="text-[19px] font-extrabold tracking-[-.02em]">회원 카드</h1>
         <p className="mb-6 mt-[6px] text-[12.5px] leading-relaxed text-ink-3">
-          회원 개인정보가 담긴 화면입니다.
-          <br />
           이메일을 넣으면 로그인 링크를 보내드립니다. 비밀번호는 없습니다.
+          <br />
+          <b className="text-ink-2">이 기기에서는 한 번만 하면 됩니다.</b> 다음부터는 주소만 열면 바로 들어옵니다.
         </p>
 
         <Input
