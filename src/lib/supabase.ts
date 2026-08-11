@@ -12,7 +12,17 @@ export const PREVIEW = !url || !key
 
 export const supabase: SupabaseClient | null = PREVIEW
   ? null
-  : createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } })
+  : createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        // 매직링크로 돌아왔을 때 URL 의 토큰을 읽어 세션으로 만든다.
+        detectSessionInUrl: true,
+        // implicit 유지. PKCE 는 링크를 '요청한 기기'에서만 열리는데,
+        // 노트북에서 요청하고 폰으로 메일을 여는 경우가 흔해서 그때 로그인이 깨진다.
+        flowType: 'implicit',
+      },
+    })
 
 /** 실제 모드에서만 부른다. 미리보기 중 호출되면 버그이므로 바로 터뜨린다. */
 export function db(): SupabaseClient {
