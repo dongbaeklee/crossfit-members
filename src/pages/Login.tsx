@@ -50,8 +50,8 @@ export default function Login() {
 
   return (
     <div className="grid min-h-screen place-items-center px-5">
-      <form onSubmit={submit} className="w-full max-w-[360px] rounded-xl2 bg-panel p-8 shadow-card">
-        <div className="mx-auto mb-4 grid h-[52px] w-[52px] place-items-center rounded-[14px] bg-brand-tint text-brand">
+      <form onSubmit={submit} className="glass w-full max-w-[360px] rounded-xl3 p-8">
+        <div className="mx-auto mb-4 grid h-[52px] w-[52px] place-items-center rounded-[16px] bg-accent-dim text-accent">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="4" y="10" width="16" height="10" rx="2" />
             <path d="M8 10V7a4 4 0 0 1 8 0v3" />
@@ -85,7 +85,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-4 w-full rounded-[11px] bg-brand py-[13px] text-[15px] font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+          className="mt-4 w-full rounded-[12px] bg-accent py-[13px] text-[15px] font-bold text-black transition hover:brightness-110 disabled:opacity-40"
         >
           {busy ? '확인 중…' : '들어가기'}
         </button>

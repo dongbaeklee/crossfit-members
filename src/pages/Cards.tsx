@@ -6,9 +6,23 @@ import type { MemberCard, ProfilePatch } from '../types'
 import { applyFilters, isRated, type FilterMode } from '../lib/cards'
 import CardTile from '../components/CardTile'
 import EditPanel from '../components/EditPanel'
-import { Alert, Chip, Info, Input } from '../components/ui'
+import { Alert, Chip, Input } from '../components/ui'
+import { isAbsent } from '../lib/cards'
 
 const keyOf = (c: Pick<MemberCard, 'box' | 'name'>) => `${c.box}::${c.name}`
+
+/** 상단 요약 한 칸. 큰 숫자 + 작은 라벨 — 참고 디자인의 기본 리듬. */
+function Stat({ label, value, tone }: { label: string; value: number; tone?: 'accent' | 'warn' }) {
+  const color = tone === 'accent' ? 'text-accent' : tone === 'warn' ? 'text-danger' : 'text-ink'
+  return (
+    <div className="glass rounded-[16px] px-[18px] py-[14px]">
+      <div className="mb-[3px] text-[10.5px] font-medium text-ink-3">{label}</div>
+      {/* 큰 표시 숫자에는 tnum 을 쓰지 않는다. '11' 이 '1 1' 처럼 벌어져 보인다.
+          고정폭은 값이 자주 바뀌며 세로로 정렬돼야 하는 곳에만 쓴다. */}
+      <div className={`text-[27px] font-semibold leading-none tracking-[-.03em] ${color}`}>{value}</div>
+    </div>
+  )
+}
 
 export default function Cards() {
   const { profile, signOut } = useAuth()
@@ -70,42 +84,50 @@ export default function Cards() {
 
   const toggle = (m: FilterMode) => setMode((cur) => (cur === m ? 'all' : m))
 
+  const absentCount = useMemo(() => rows.filter(isAbsent).length, [rows])
+
   return (
-    <div className="mx-auto max-w-[1240px] px-5 py-6">
-      <header className="mb-4 flex items-center gap-3">
-        <h1 className="text-[20px] font-extrabold tracking-[-.02em]">회원 카드</h1>
-        <span className="text-[12px] text-ink-3">
-          {profile?.display_name || profile?.role}
-          {profile?.box ? ` · ${profile.box}` : ' · 전체'}
+    <div className="mx-auto max-w-[1280px] px-5 pb-16 pt-7">
+      <header className="mb-5 flex items-center gap-[13px]">
+        <span className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[12px] bg-accent text-black">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="5" y="6" width="14" height="2.6" rx="1.3" />
+            <rect x="5" y="10.7" width="9.5" height="2.6" rx="1.3" opacity=".72" />
+            <rect x="5" y="15.4" width="5" height="2.6" rx="1.3" opacity=".45" />
+          </svg>
         </span>
+        <div>
+          <h1 className="text-[19px] font-bold leading-tight tracking-[-.03em]">회원 카드</h1>
+          <p className="text-[11.5px] text-ink-3">
+            {profile?.display_name || profile?.role}
+            {profile?.box ? ` · ${profile.box}` : ' · 전 지점'}
+          </p>
+        </div>
         {!PREVIEW && (
           <button
             type="button"
             onClick={signOut}
-            className="ml-auto rounded-[9px] border border-line bg-panel px-[13px] py-2 text-[12.5px] font-semibold text-ink-2 transition hover:border-line2 hover:text-ink"
+            className="glass glass-hover ml-auto rounded-full px-[15px] py-[8px] text-[12.5px] font-semibold text-ink-2"
           >
             로그아웃
           </button>
         )}
       </header>
 
+      <div className="mb-4 grid grid-cols-2 gap-[10px] sm:grid-cols-4">
+        <Stat label="전체 회원" value={rows.length} />
+        <Stat label="평가 완료" value={ratedCount} tone="accent" />
+        <Stat label="미평가" value={rows.length - ratedCount} />
+        <Stat label="10일+ 미출석" value={absentCount} tone={absentCount ? 'warn' : undefined} />
+      </div>
+
       {PREVIEW && (
-        <div className="mb-4 rounded-[14px] border border-warn/30 bg-warn-tint px-4 py-[14px] text-[12.5px] leading-[1.65] text-ink-2">
-          <b className="text-warn">미리보기 — 화면에 보이는 회원은 전부 가짜입니다.</b>
+        <div className="mb-4 rounded-[16px] border border-amber/25 bg-amber/[.08] px-[18px] py-[14px] text-[12.5px] leading-[1.7] text-ink-2">
+          <b className="text-amber">미리보기 — 화면에 보이는 회원은 전부 가짜입니다.</b>
           <br />
-          모양과 조작감을 확인하기 위한 화면입니다. 고쳐도 새로고침하면 되돌아가고, 아무 데도 저장되지 않습니다.
-          Supabase 프로젝트를 복구하고 접속 정보를 넣으면 실제 회원 197명이 뜨고 로그인이 켜집니다.
+          모양과 조작감을 확인하기 위한 화면입니다. 고쳐도 새로고침하면 되돌아갑니다.
         </div>
       )}
-
-      <Info>
-        회원별 <b>운동 역량</b>(역도·체조·유산소)과 <b>특성</b>(목표·성향·리스크)을 한 장으로 봅니다. 카드를 누르면
-        바로 편집됩니다.{' '}
-        <span className="text-ink-3">
-          평가 완료 <b>{ratedCount}</b>명 / 전체 {rows.length}명
-          {PREVIEW ? ' · 미리보기라 저장되지 않습니다.' : ' · 입력값은 바로 저장되어 다른 코치에게도 보입니다.'}
-        </span>
-      </Info>
 
       {loadError && (
         <div className="mb-4">
@@ -124,11 +146,12 @@ export default function Cards() {
 
       <div className="mb-[13px] flex flex-wrap items-center gap-2">
         <Input
-          className="flex-1 basis-[170px] bg-panel"
+          className="w-[190px] rounded-full"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름 검색"
         />
+        <span className="mx-[3px] h-[18px] w-px bg-line" />
         <Chip active={box === ''} onClick={() => setBox('')}>
           전체 {rows.length}
         </Chip>
@@ -159,13 +182,13 @@ export default function Cards() {
       )}
 
       {loading ? (
-        <div className="py-[30px] text-center text-[13.5px] text-ink-3">불러오는 중…</div>
+        <div className="py-[60px] text-center text-[13px] text-ink-3">불러오는 중…</div>
       ) : visible.length === 0 ? (
-        <div className="py-[30px] text-center text-[13.5px] text-ink-3">
+        <div className="py-[60px] text-center text-[13px] text-ink-3">
           {rows.length === 0 ? '아직 회원 데이터가 없습니다. 시드 스크립트를 먼저 실행하세요.' : '조건에 맞는 회원이 없습니다.'}
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(228px,1fr))] gap-[11px]">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(238px,1fr))] gap-[12px]">
           {visible.map((c) => {
             const k = keyOf(c)
             return <CardTile key={k} card={c} selected={selected === k} onSelect={() => setSelected(selected === k ? null : k)} />
