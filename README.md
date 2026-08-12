@@ -36,32 +36,31 @@
 
 **권한**: 코치 이상만, 자기 지점만. `box`가 비어 있는 `owner`는 전 지점. 로그인하지 않았거나 `pending` 이면 아무것도 안 보인다(RLS).
 
-## 로그인 — 매직링크 (비밀번호 없음)
+## 로그인 — 입장 코드 하나 (이메일 없음)
 
-사이트에서 이메일을 넣으면 로그인 링크가 메일로 온다. 누르면 바로 들어와진다. 비밀번호를 만들지도, 나눠주지도 않는다.
+허브와 같은 방식이다. 코치는 **입장 코드만** 친다. 이메일도, 메일함 확인도, 개인 계정도 없다.
 
-**가입만으로는 아무 권한도 없다**(`pending`). Supabase 는 공개 가입이 기본이라, 가입 즉시 권한을 주면 아무나 회원 정보를 보게 되기 때문이다. 관장이 직접 올려줘야 한다.
+구조는 이렇다: 팀 공용 계정 하나를 만들고, **그 계정의 비밀번호가 곧 입장 코드**다. 계정 주소(`VITE_TEAM_EMAIL`)는 비밀이 아니라 번들에 들어가도 되고, 비밀은 코드 쪽이다. 코드를 통과해야 세션이 생기고, 그래야 RLS 를 넘어 회원 데이터가 내려온다.
 
-1. 코치가 사이트에서 이메일 입력 → 링크 클릭 → 로그인 (이 시점 권한은 `pending`)
-2. 화면에 자기 이메일이 뜬다. 그걸 관장에게 전달
-3. 관장이 SQL Editor 에서 권한 부여
+**설치 (한 번만)**
+
+1. [Authentication → Users → Add user](https://supabase.com/dashboard/project/hwnvgmdkttaiasqohndz/auth/users)
+   - Email: `team@crossfit-members.app` (`.env.local` 의 `VITE_TEAM_EMAIL` 과 정확히 같아야 한다)
+   - Password: 원하는 입장 코드 (**6자 이상**)
+   - **Auto Confirm User 체크** — 안 하면 로그인이 막힌다
+2. SQL Editor 에서 권한 부여
 
 ```sql
--- 관장(전 지점)
-update public.staff set role = 'owner', display_name = '이도형'
-where email = '관장이메일@example.com';
-
--- 코치(담당 지점만)
-update public.staff set role = 'coach', box = '메이커스', display_name = '조강희'
-where email = '코치이메일@example.com';
+-- 공용 계정에 전 지점 권한
+update public.staff set role = 'owner', display_name = '공용'
+where email = 'team@crossfit-members.app';
 ```
 
-권한을 회수하려면 `role = 'pending'` 으로 되돌린다.
+**코드를 바꾸려면** 대시보드에서 그 계정의 비밀번호를 바꾸면 된다. 배포는 다시 할 필요 없다.
 
-> ⚠️ **메일 발송은 시간당 2통**이다(Supabase 기본 메일 서비스, `rate_limit_email_sent: 2`).
-> 코치 여러 명을 한 번에 등록할 때 걸린다. 자주 쓸 거면 Authentication → Emails 에서 커스텀 SMTP(예: Resend, SendGrid)를 붙이면 풀린다.
+> ⚠️ **모두가 같은 계정을 쓴다.** 누가 무엇을 고쳤는지는 구분되지 않는다(`member_profiles.updated_by` 가 전부 공용 계정). 지점별로 접근을 나누거나 사람별 이력이 필요해지면 개인 계정 방식으로 되돌려야 한다 — `staff` 테이블은 이미 `coach`/`box` 를 지원하므로 스키마 변경 없이 가능하다.
 >
-> 매직링크가 동작하려면 `site_url` 과 `uri_allow_list` 에 배포 주소가 들어 있어야 한다. 기본값이 `http://localhost:3000` 이라 그대로 두면 링크가 로컬로 간다. (설정 완료됨 — 저장소 주소가 바뀌면 같이 고칠 것)
+> 코드가 새면 주소를 아는 사람 누구나 회원 197명 정보를 본다. 외부에 공유하지 말 것.
 
 ## 준비
 

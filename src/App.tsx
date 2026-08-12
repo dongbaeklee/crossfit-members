@@ -19,17 +19,15 @@ export default function App() {
     return (
       <div className="grid min-h-screen place-items-center px-5">
         <div className="w-full max-w-[380px] rounded-xl2 bg-panel p-8 text-center shadow-card">
-          <h1 className="mb-4 text-[17px] font-extrabold">로그인은 됐습니다</h1>
+          <h1 className="mb-4 text-[17px] font-extrabold">코드는 맞았습니다</h1>
           <Alert tone="info">
-            아직 코치 권한이 없어 회원 정보를 볼 수 없습니다.
+            다만 이 계정에 아직 권한이 없어 회원 정보를 볼 수 없습니다.
             <br />
-            관장님께 <b>아래 이메일</b>을 알려주고 권한을 요청해 주세요.
-            <div className="mt-2 rounded-lg bg-panel px-3 py-2 text-[13px] font-bold text-ink">
-              {session?.user?.email ?? '(이메일 확인 불가)'}
+            관장님께 <b>공용 계정 권한 지정</b>을 요청해 주세요.
+            <div className="mt-2 rounded-lg bg-panel px-3 py-2 text-[12.5px] font-bold text-ink">
+              {session?.user?.email ?? '(계정 확인 불가)'}
             </div>
-            <div className="mt-2 text-[11.5px] text-ink-3">
-              현재 권한: {profile ? profile.role : '미지정'}
-            </div>
+            <div className="mt-2 text-[11.5px] text-ink-3">현재 권한: {profile ? profile.role : '미지정'}</div>
           </Alert>
           <button
             type="button"

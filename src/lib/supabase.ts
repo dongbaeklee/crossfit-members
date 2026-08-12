@@ -12,7 +12,8 @@ export const PREVIEW = !url || !key
 
 export const supabase: SupabaseClient | null = PREVIEW
   ? null
-  : createClient(url, key, {
+  : // PREVIEW 가 false 라는 건 url/key 가 둘 다 있다는 뜻이다(위 정의). 타입만 좁혀 준다.
+    createClient(url as string, key as string, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
