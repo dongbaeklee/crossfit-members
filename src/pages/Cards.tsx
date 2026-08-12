@@ -4,6 +4,7 @@ import { addMember, archiveMember, loadCards, saveProfile } from '../lib/store'
 import { useAuth } from '../auth/AuthProvider'
 import type { MemberCard, ProfilePatch } from '../types'
 import { applyFilters, isAbsent, isRated } from '../lib/cards'
+import { exportMembers } from '../lib/export'
 import CardTile from '../components/CardTile'
 import EditPanel from '../components/EditPanel'
 import { Alert, Chip, Input } from '../components/ui'
@@ -197,16 +198,33 @@ export default function Cards() {
           </Chip>
         ))}
 
-        <button
-          type="button"
-          onClick={() => {
-            setAdding((v) => !v)
-            setNewBox(box || boxes[0] || '')
-          }}
-          className="ml-auto flex items-center gap-[6px] rounded-full bg-accent px-[15px] py-[8px] text-[12.5px] font-bold text-black transition hover:brightness-110"
-        >
-          <span className="text-[15px] leading-none">+</span> 회원 추가
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportMembers(visible, box)}
+            disabled={visible.length === 0}
+            title="지금 보이는 목록을 그대로 내려받습니다"
+            className="glass glass-hover flex items-center gap-[7px] rounded-full px-[15px] py-[8px] text-[12.5px] font-semibold text-ink-2 disabled:opacity-35"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 4v11" />
+              <path d="m7.5 11 4.5 4.5 4.5-4.5" />
+              <path d="M4.5 19.5h15" />
+            </svg>
+            엑셀 내려받기
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAdding((v) => !v)
+              setNewBox(box || boxes[0] || '')
+            }}
+            className="flex items-center gap-[6px] rounded-full bg-accent px-[15px] py-[8px] text-[12.5px] font-bold text-black transition hover:brightness-110"
+          >
+            <span className="text-[15px] leading-none">+</span> 회원 추가
+          </button>
+        </div>
       </div>
 
       {adding && (
