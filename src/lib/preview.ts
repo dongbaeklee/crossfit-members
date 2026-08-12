@@ -54,6 +54,7 @@ export const PREVIEW_CARDS: MemberCard[] = seeds.map((s) => {
     plan_end: s.plan_end ?? null,
     joined_on: s.joined_on ?? null,
     last_attended: s.last_attended ?? null,
+    source: s.source ?? 'excel',
     cap_weight: s.cap_weight ?? 0,
     cap_gym: s.cap_gym ?? 0,
     cap_metcon: s.cap_metcon ?? 0,

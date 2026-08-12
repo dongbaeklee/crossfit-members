@@ -75,22 +75,32 @@ export default function EditPanel({
   saving,
   error,
   onPatch,
+  onDelete,
   onClose,
 }: {
   card: MemberCard
   saving: boolean
   error: string
   onPatch: (patch: ProfilePatch) => void
+  onDelete: () => void
   onClose: () => void
 }) {
   const v = caps(card)
   const dd = daysToExpiry(card)
+  // 브라우저 confirm() 대신 인라인 확인. 실수로 지우는 걸 막되 흐름은 끊지 않는다.
+  const [confirming, setConfirming] = useState(false)
+  useEffect(() => setConfirming(false), [card.box, card.name])
 
   return (
     <div className="glass mb-4 rounded-xl3 px-[22px] pb-[20px] pt-[20px]">
       <div className="flex items-center gap-[10px]">
         <h2 className="text-[20px] font-bold tracking-[-.03em]">{card.name}</h2>
         <GymBadge box={card.box} />
+        {card.source === 'manual' && (
+          <span className="rounded-md bg-white/[.055] px-[7px] py-[3px] text-[10px] font-semibold text-ink-3">
+            직접 추가
+          </span>
+        )}
         <span className="ml-auto text-[11.5px] text-ink-3">
           {error ? <span className="text-danger">{error}</span> : saving ? '저장 중…' : card.updated_at ? '저장됨' : ''}
         </span>
@@ -141,6 +151,39 @@ export default function EditPanel({
             onCommit={(s) => onPatch({ started_on: s.trim() === '' ? null : s.trim() })}
           />
         </div>
+      </div>
+
+      <div className="mt-[22px] flex items-center gap-[10px] border-t border-line pt-[16px]">
+        {confirming ? (
+          <>
+            <span className="text-[12px] text-ink-2">
+              <b className="text-ink">{card.name}</b> 님을 목록에서 지울까요? 입력해 둔 역량·특성은 보관되어, 다시
+              추가하면 되살아납니다.
+            </span>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="ml-auto flex-none rounded-[9px] bg-danger px-[14px] py-[8px] text-[12.5px] font-bold text-white transition hover:brightness-110"
+            >
+              삭제
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="flex-none rounded-[9px] border border-line px-[14px] py-[8px] text-[12.5px] font-semibold text-ink-2 transition hover:border-line2 hover:text-ink"
+            >
+              취소
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="ml-auto rounded-[9px] border border-line px-[14px] py-[8px] text-[12.5px] font-semibold text-ink-3 transition hover:border-danger/50 hover:text-danger"
+          >
+            회원 삭제
+          </button>
+        )}
       </div>
     </div>
   )

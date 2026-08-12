@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PREVIEW } from '../lib/supabase'
-import { loadCards, saveProfile } from '../lib/store'
+import { addMember, archiveMember, loadCards, saveProfile } from '../lib/store'
 import { useAuth } from '../auth/AuthProvider'
 import type { MemberCard, ProfilePatch } from '../types'
-import { applyFilters, isRated, type FilterMode } from '../lib/cards'
+import { applyFilters, isAbsent, isRated } from '../lib/cards'
 import CardTile from '../components/CardTile'
 import EditPanel from '../components/EditPanel'
 import { Alert, Chip, Input } from '../components/ui'
-import { isAbsent } from '../lib/cards'
 
 const keyOf = (c: Pick<MemberCard, 'box' | 'name'>) => `${c.box}::${c.name}`
 
@@ -34,8 +33,13 @@ export default function Cards() {
 
   const [selected, setSelected] = useState<string | null>(null)
   const [box, setBox] = useState('')
-  const [mode, setMode] = useState<FilterMode>('all')
   const [query, setQuery] = useState('')
+
+  // 회원 추가 폼
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newBox, setNewBox] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -56,7 +60,7 @@ export default function Cards() {
 
   const boxes = useMemo(() => [...new Set(rows.map((r) => r.box))].sort(), [rows])
   const ratedCount = useMemo(() => rows.filter(isRated).length, [rows])
-  const visible = useMemo(() => applyFilters(rows, { box, mode, query }), [rows, box, mode, query])
+  const visible = useMemo(() => applyFilters(rows, { box, query }), [rows, box, query])
   const selectedCard = useMemo(() => rows.find((r) => keyOf(r) === selected) ?? null, [rows, selected])
 
   /** 낙관적 반영 후 저장. 실패하면 되돌리고 이유를 보여준다. */
@@ -82,7 +86,39 @@ export default function Cards() {
     }
   }
 
-  const toggle = (m: FilterMode) => setMode((cur) => (cur === m ? 'all' : m))
+  /** 회원 추가. 성공하면 그 회원을 바로 열어 이어서 입력할 수 있게 한다. */
+  async function submitAdd() {
+    const name = newName.trim()
+    const target = newBox || boxes[0] || ''
+    if (!name || !target) return
+    setSaveError('')
+    setBusy(true)
+    try {
+      const card = await addMember(target, name)
+      setRows((prev) => [...prev, card].sort((a, b) => a.name.localeCompare(b.name, 'ko')))
+      setNewName('')
+      setAdding(false)
+      setSelected(keyOf(card))
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** 회원 삭제(보관). 낙관적으로 목록에서 빼고, 실패하면 되돌린다. */
+  async function removeMember(card: MemberCard) {
+    const before = rows
+    setSaveError('')
+    setSelected(null)
+    setRows((prev) => prev.filter((r) => keyOf(r) !== keyOf(card)))
+    try {
+      await archiveMember(card)
+    } catch (e) {
+      setRows(before)
+      setSaveError(e instanceof Error ? e.message : String(e))
+    }
+  }
 
   const absentCount = useMemo(() => rows.filter(isAbsent).length, [rows])
 
@@ -157,19 +193,61 @@ export default function Cards() {
         </Chip>
         {boxes.map((b) => (
           <Chip key={b} active={box === b} onClick={() => setBox(b)}>
-            {b.replace('인미사', '')}
+            {b.replace('인미사', '')} {rows.filter((r) => r.box === b).length}
           </Chip>
         ))}
-        <Chip active={mode === 'todo'} onClick={() => toggle('todo')}>
-          미평가
-        </Chip>
-        <Chip active={mode === 'weak'} onClick={() => toggle('weak')}>
-          약점 있음
-        </Chip>
-        <Chip active={mode === 'absent'} onClick={() => toggle('absent')}>
-          미출석
-        </Chip>
+
+        <button
+          type="button"
+          onClick={() => {
+            setAdding((v) => !v)
+            setNewBox(box || boxes[0] || '')
+          }}
+          className="ml-auto flex items-center gap-[6px] rounded-full bg-accent px-[15px] py-[8px] text-[12.5px] font-bold text-black transition hover:brightness-110"
+        >
+          <span className="text-[15px] leading-none">+</span> 회원 추가
+        </button>
       </div>
+
+      {adding && (
+        <div className="glass mb-4 flex flex-wrap items-center gap-[10px] rounded-[16px] px-[18px] py-[14px]">
+          <span className="text-[12px] font-medium text-ink-3">지점</span>
+          {boxes.map((b) => (
+            <Chip key={b} active={newBox === b} onClick={() => setNewBox(b)}>
+              {b.replace('인미사', '')}
+            </Chip>
+          ))}
+          <Input
+            className="ml-[6px] w-[200px] rounded-full"
+            value={newName}
+            autoFocus
+            placeholder="회원 이름"
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submitAdd()
+              if (e.key === 'Escape') setAdding(false)
+            }}
+          />
+          <button
+            type="button"
+            onClick={submitAdd}
+            disabled={busy || !newName.trim()}
+            className="rounded-full bg-accent px-[16px] py-[8px] text-[12.5px] font-bold text-black transition hover:brightness-110 disabled:opacity-35"
+          >
+            {busy ? '추가 중…' : '추가'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdding(false)}
+            className="rounded-full border border-line px-[14px] py-[8px] text-[12.5px] font-semibold text-ink-3 transition hover:border-line2 hover:text-ink"
+          >
+            취소
+          </button>
+          <span className="w-full text-[11.5px] leading-relaxed text-ink-3">
+            여기서 추가한 회원은 주간 엑셀 갱신에도 지워지지 않습니다. 회원권·출석 정보는 엑셀에서만 채워집니다.
+          </span>
+        </div>
+      )}
 
       {selectedCard && (
         <EditPanel
@@ -177,6 +255,7 @@ export default function Cards() {
           saving={savingKey === keyOf(selectedCard)}
           error={saveError ? '저장 실패' : ''}
           onPatch={(p) => patch(selectedCard, p)}
+          onDelete={() => removeMember(selectedCard)}
           onClose={() => setSelected(null)}
         />
       )}

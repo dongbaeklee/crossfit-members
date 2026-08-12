@@ -10,6 +10,8 @@ export interface MemberCard {
   /** 앱 가입일. 대량 이관일이라 실제 운동시작일이 아니다. */
   joined_on: string | null
   last_attended: string | null
+  /** excel=주간 시드가 넣음 / manual=화면에서 추가함 */
+  source: 'excel' | 'manual'
   /** 운동 역량 0=미평가, 1~5 */
   cap_weight: number
   cap_gym: number

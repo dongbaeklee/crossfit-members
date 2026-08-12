@@ -17,7 +17,7 @@ import type { MemberCard } from '../src/types'
 
 const base: MemberCard = {
   box: '메이커스', name: '홍길동', status: '활성', plan: '', plan_start: null, plan_end: null,
-  joined_on: null, last_attended: null, cap_weight: 0, cap_gym: 0, cap_metcon: 0,
+  joined_on: null, last_attended: null, source: 'excel', cap_weight: 0, cap_gym: 0, cap_metcon: 0,
   goal: '', trait: '', risk: '', started_on: null, note: '', updated_at: null, effective_start: null,
 }
 const mk = (o: Partial<MemberCard>): MemberCard => ({ ...base, ...o })
@@ -76,12 +76,16 @@ const rows = [
   mk({ name: '다', box: '발리인미사', last_attended: ago(20) }),
 ]
 const names = (r: MemberCard[]) => r.map((x) => x.name)
-eq('미평가 필터', names(applyFilters(rows, { box: '', mode: 'todo', query: '' })), ['나', '다'])
-eq('약점 필터', names(applyFilters(rows, { box: '', mode: 'weak', query: '' })), ['가'])
-eq('미출석 필터', names(applyFilters(rows, { box: '', mode: 'absent', query: '' })), ['다'])
-eq('지점 필터', names(applyFilters(rows, { box: '메이커스', mode: 'all', query: '' })), ['가', '나'])
-eq('이름 검색', names(applyFilters(rows, { box: '', mode: 'all', query: '다' })), ['다'])
-eq('지점+검색 동시', names(applyFilters(rows, { box: '메이커스', mode: 'all', query: '다' })), [])
+eq('필터 없음', names(applyFilters(rows, { box: '', query: '' })), ['가', '나', '다'])
+eq('지점 필터', names(applyFilters(rows, { box: '메이커스', query: '' })), ['가', '나'])
+eq('이름 검색', names(applyFilters(rows, { box: '', query: '다' })), ['다'])
+eq('공백만 있는 검색어는 무시', names(applyFilters(rows, { box: '', query: '   ' })), ['가', '나', '다'])
+eq('지점+검색 동시', names(applyFilters(rows, { box: '메이커스', query: '다' })), [])
+
+// 미평가·약점·미출석은 이제 필터가 아니라 상단 요약 숫자로만 쓰인다
+eq('미평가 집계', rows.filter((r) => !isRated(r)).length, 2)
+eq('약점 집계', rows.filter(hasWeakness).length, 1)
+eq('미출석 집계', rows.filter(isAbsent).length, 1)
 
 console.log(`\n통과 ${pass} · 실패 ${fail}`)
 process.exit(fail ? 1 : 0)

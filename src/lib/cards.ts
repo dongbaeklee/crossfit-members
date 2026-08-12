@@ -103,19 +103,15 @@ export function daysToExpiry(c: MemberCard): number | null {
   return Math.round((d.getTime() - today().getTime()) / DAY)
 }
 
-export type FilterMode = 'all' | 'todo' | 'weak' | 'absent'
-
-export function applyFilters(
-  rows: MemberCard[],
-  opts: { box: string; mode: FilterMode; query: string },
-): MemberCard[] {
+/**
+ * 지점과 이름으로만 거른다.
+ * 미평가·약점·미출석 필터는 요청에 따라 걷어냈다(상단 요약 숫자로는 계속 보인다).
+ */
+export function applyFilters(rows: MemberCard[], opts: { box: string; query: string }): MemberCard[] {
   const q = opts.query.trim()
   return rows.filter((c) => {
     if (opts.box && c.box !== opts.box) return false
     if (q && !c.name.includes(q)) return false
-    if (opts.mode === 'todo') return !isRated(c)
-    if (opts.mode === 'weak') return hasWeakness(c)
-    if (opts.mode === 'absent') return isAbsent(c)
     return true
   })
 }
